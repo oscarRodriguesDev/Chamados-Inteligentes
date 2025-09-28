@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,23 +8,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MessageCircle, User, Lock } from "lucide-react"
 
 interface LoginFormProps {
-  onLogin: (name: string) => void
+  onLogin: (username: string) => void
 }
 
 export default function LoginForm({ onLogin }: LoginFormProps) {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !email.trim()) return
+    if (!username.trim() || !password.trim()) return
 
     setIsLoading(true)
-    // Simular delay de login
+    // Aqui você pode substituir pela chamada real da sua API
     await new Promise((resolve) => setTimeout(resolve, 1000))
     setIsLoading(false)
-    onLogin(name.trim())
+
+    // Callback passando o usuário
+    onLogin(username.trim())
   }
 
   return (
@@ -45,33 +46,36 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Seu nome"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+              {/* Usuário */}
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Usuário"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Seu email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+              {/* Senha */}
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || !name.trim() || !email.trim()}>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !username.trim() || !password.trim()}
+              >
                 {isLoading ? "Entrando..." : "Entrar no Chat"}
               </Button>
             </form>

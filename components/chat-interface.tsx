@@ -15,6 +15,7 @@ interface Message {
   text: string
   sender: "user" | "bot"
   timestamp: Date
+  isGpt?: boolean
 }
 
 interface ChatInterfaceProps {
@@ -22,35 +23,7 @@ interface ChatInterfaceProps {
   onLogout: () => void
 }
 
-// Corrigido: agora é async e retorna Promise<string>
-const getBotResponse = async (userMessage: string): Promise<string> => {
-  const message = userMessage.toLowerCase()
-
-  //saudação do bot sem necessidade de ia
-  if (message.includes("olá") || message.includes("oi") || message.includes("hello")) {
-    return "Olá! É um prazer conversar com você. Como posso ajudá-lo hoje?"
-  }
-
-  //tenta responder humanamente
-  if (message.includes("como você está") || message.includes("tudo bem")) {
-    return "Estou funcionando perfeitamente, obrigado por perguntar! Como posso ajudá-lo?"
-  }
-
-  //detecta pedido de ajuda pede o assunto
-  if (message.includes("ajuda") || message.includes("help")) {
-    return "Claro! Estou aqui para ajudar. Posso fornecer informações sobre diversos assuntos, responder perguntas e orientá-lo. O que você precisa saber?"
-  }
-
-  if (message.includes("contato") || message.includes("telefone") || message.includes("email")) {
-    return "Você pode entrar em contato conosco pelo email: contato@empresa.com ou telefone: (11) 9999-9999. Nosso horário de atendimento é de segunda a sexta, das 9h às 18h."
-  }
-
-  //encerramento
-  if (message.includes("obrigado") || message.includes("valeu") || message.includes("thanks")) {
-    return "De nada! Fico feliz em poder ajudar. Se tiver mais alguma dúvida, estarei aqui!"
-  }
-
-  // Aqui faz requisição para o chat passando o questionamento do usuário e o quadro de avisos
+const callGptApi = async (userMessage: string): Promise<{ text: string; isGpt: boolean }> => {
   try {
     const res = await fetch("/api/bot", {
       method: "POST",
@@ -62,34 +35,36 @@ const getBotResponse = async (userMessage: string): Promise<string> => {
         avisos: quadro_avisos,
       }),
     })
+
     if (!res.ok) {
-      const errorData = await res.json()
-      return errorData.error || "Erro ao obter resposta do assistente."
+      const err = await res.json().catch(() => null)
+      return { text: err?.error || "Erro ao obter resposta do assistente.", isGpt: true }
     }
+
     const data = await res.json()
-    return data.reply || "Desculpe, não consegui gerar uma resposta."
-  } catch {
-    return "Erro ao conectar com o assistente virtual."
+    return { text: data.reply || "Desculpe, não consegui gerar uma resposta.", isGpt: true }
+  } catch (e) {
+    return { text: "Erro ao conectar com o assistente virtual.", isGpt: true }
   }
 }
 
 export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps) {
-  const router = useRouter() // ✅ agora está dentro do componente
+  const router = useRouter()
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: `Olá ${userName}! Bem-vindo ao nosso sistema de chamados.
-       Sou seu assistente virtual e estou aqui para ajudá-lo. 
-       Acredito que tenho todas as informações que você precisa, 
-       mas se necessário poderei transferir você para um de nossos atendentes.`,
+      text: `Olá ${userName}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. 
+Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
       sender: "bot",
       timestamp: new Date(),
+      isGpt: false,
     },
   ])
   const [inputMessage, setInputMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [showOptions, setShowOptions] = useState(false) // 👈 novo estado
+  const [showOptions, setShowOptions] = useState(false)
+  const [showChamadoButton, setShowChamadoButton] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -103,31 +78,70 @@ export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputMessage.trim()) return
-
+  
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputMessage.trim(),
       sender: "user",
       timestamp: new Date(),
     }
-
+  
     setMessages((prev) => [...prev, userMessage])
     setInputMessage("")
     setIsTyping(true)
-    setShowOptions(false) // 👈 esconde botões ao mandar nova msg
-
-    const botText = await getBotResponse(userMessage.text)
+    setShowOptions(false)
+    setShowChamadoButton(false)
+  
+    const text = userMessage.text.toLowerCase().trim()
+  
+    // Usuário aceita abrir chamado
+    if (text === "sim" || text === "quero" || text.includes("abrir chamado")) {
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Perfeito! Clique no botão abaixo para abrir seu chamado.",
+        sender: "bot",
+        timestamp: new Date(),
+        isGpt: false,
+      }
+      await new Promise((r) => setTimeout(r, 400))
+      setMessages((prev) => [...prev, botMessage])
+      setIsTyping(false)
+      setShowOptions(true)
+      setShowChamadoButton(true)
+      return
+    }
+  
+    // Usuário recusa abrir chamado
+    if (text === "não" || text === "nao") {
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Sem problemas! Se mudar de ideia, é só dizer 'sim' que te mostro o botão.",
+        sender: "bot",
+        timestamp: new Date(),
+        isGpt: false,
+      }
+      await new Promise((r) => setTimeout(r, 400))
+      setMessages((prev) => [...prev, botMessage])
+      setIsTyping(false)
+      setShowOptions(true)
+      return
+    }
+  
+    // Caso contrário → chama GPT
+    const botResult = await callGptApi(text)
     const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: botText,
+      id: (Date.now() + 2).toString(),
+      text: botResult.text, // agora o GPT decide se pergunta sobre abrir chamado
       sender: "bot",
       timestamp: new Date(),
+      isGpt: botResult.isGpt,
     }
+  
     setMessages((prev) => [...prev, botMessage])
     setIsTyping(false)
-    setShowOptions(true) // 👈 mostra botões após resposta do bot
+    setShowOptions(true)
   }
-
+  
   return (
     <div className="min-h-screen chat-gradient">
       {/* Header */}
@@ -171,9 +185,7 @@ export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps
               )}
 
               <Card
-                className={`max-w-[70%] p-3 ${
-                  message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-card"
-                }`}
+                className={`max-w-[70%] p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-card"}`}
               >
                 <p className="text-sm leading-relaxed">{message.text}</p>
                 <p
@@ -208,14 +220,8 @@ export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps
               <Card className="bg-card p-3">
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                 </div>
               </Card>
             </div>
@@ -228,12 +234,11 @@ export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>
-              <Button
-                variant="default"
-                onClick={() => router.push("/chamados/01")}
-              >
-                Abrir Chamado
-              </Button>
+              {showChamadoButton && (
+                <Button variant="default" onClick={() => router.push("/chamados/01")}>
+                  Abrir Chamado
+                </Button>
+              )}
             </div>
           )}
 
