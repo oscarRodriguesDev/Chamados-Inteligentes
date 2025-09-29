@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import { useParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, LogOut, Bot, User } from "lucide-react"
 import { quadro_avisos } from "@/app/utils/avisos"
+
 
 interface Message {
   id: string
@@ -18,10 +20,7 @@ interface Message {
   isGpt?: boolean
 }
 
-interface ChatInterfaceProps {
-  userName: string
-  onLogout: () => void
-}
+
 
 const callGptApi = async (
   userMessage: string,
@@ -55,15 +54,18 @@ const callGptApi = async (
   }
 }
 
-export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps) {
+export default function ChatInterface() {
+  const parms = useParams()
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const id = parms.id
 
   // Mensagem inicial padrão
   const initialMessage: Message[] = [
     {
       id: "1",
-      text: `Olá ${userName}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. 
+      text: `Olá ${id}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. 
 Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
       sender: "bot",
       timestamp: new Date(),
@@ -103,7 +105,7 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
     setIsTyping(false)
     setShowOptions(false)
     setShowChamadoButton(false)
-    onLogout()
+ 
   }
 
   const scrollToBottom = () => {
@@ -198,7 +200,7 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Olá, {userName}</span>
+            <span className="text-sm text-muted-foreground">Olá, {id}</span>
             <Button
               variant="outline"
               size="sm"

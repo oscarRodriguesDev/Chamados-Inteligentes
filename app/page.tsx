@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import LoginForm from "@/components/login-form"
-import ChatInterface from "@/components/chat-interface"
+import ChatInterface from "./chat/[id]/page"
+import { redirect } from "next/navigation"
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -23,7 +24,7 @@ export default function Home() {
       {!isLoggedIn ? (
         <LoginForm onLogin={handleLogin} />
       ) : (
-        <ChatInterface userName={userName} onLogout={handleLogout} />
+       redirect('/chat/123')
       )}
     </main>
   )
