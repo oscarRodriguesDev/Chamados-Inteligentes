@@ -23,7 +23,10 @@ interface ChatInterfaceProps {
   onLogout: () => void
 }
 
-const callGptApi = async (userMessage: string): Promise<{ text: string; isGpt: boolean }> => {
+const callGptApi = async (
+  userMessage: string,
+  history: Message[]
+): Promise<{ text: string; isGpt: boolean }> => {
   try {
     const res = await fetch("/api/bot", {
       method: "POST",
@@ -33,6 +36,10 @@ const callGptApi = async (userMessage: string): Promise<{ text: string; isGpt: b
       body: JSON.stringify({
         message: userMessage,
         avisos: quadro_avisos,
+        history: history.map((m) => ({
+          role: m.sender === "user" ? "user" : "assistant",
+          content: m.text,
+        })),
       }),
     })
 
@@ -50,8 +57,10 @@ const callGptApi = async (userMessage: string): Promise<{ text: string; isGpt: b
 
 export default function ChatInterface({ userName, onLogout }: ChatInterfaceProps) {
   const router = useRouter()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [messages, setMessages] = useState<Message[]>([
+  // Mensagem inicial padrão
+  const initialMessage: Message[] = [
     {
       id: "1",
       text: `Olá ${userName}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. 
@@ -60,12 +69,42 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
       timestamp: new Date(),
       isGpt: false,
     },
-  ])
+  ]
+
+  // Carrega histórico do sessionStorage ao iniciar (mas só mantém durante a sessão)
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("chatHistory")
+      if (saved) {
+        return JSON.parse(saved).map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp),
+        }))
+      }
+    }
+    return initialMessage
+  })
+
   const [inputMessage, setInputMessage] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [showOptions, setShowOptions] = useState(false)
   const [showChamadoButton, setShowChamadoButton] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Sempre salva histórico no sessionStorage, mas só para a sessão atual
+  useEffect(() => {
+    sessionStorage.setItem("chatHistory", JSON.stringify(messages))
+  }, [messages])
+
+  // Limpa o histórico ao sair/finalizar atendimento
+  const handleLogout = () => {
+    sessionStorage.removeItem("chatHistory")
+    setMessages(initialMessage)
+    setInputMessage("")
+    setIsTyping(false)
+    setShowOptions(false)
+    setShowChamadoButton(false)
+    onLogout()
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -78,24 +117,24 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputMessage.trim()) return
-  
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputMessage.trim(),
       sender: "user",
       timestamp: new Date(),
     }
-  
+
     setMessages((prev) => [...prev, userMessage])
     setInputMessage("")
     setIsTyping(true)
     setShowOptions(false)
     setShowChamadoButton(false)
-  
+
     const text = userMessage.text.toLowerCase().trim()
-  
+
     // Usuário aceita abrir chamado
-    if (text === "sim" || text === "quero" || text.includes("abrir chamado")) {
+    if (text === "sim" || text === "quero" || text.includes("abrir chamado")|| text.includes("abrir um chamado")) {
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: "Perfeito! Clique no botão abaixo para abrir seu chamado.",
@@ -110,7 +149,7 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
       setShowChamadoButton(true)
       return
     }
-  
+
     // Usuário recusa abrir chamado
     if (text === "não" || text === "nao") {
       const botMessage: Message = {
@@ -126,22 +165,22 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
       setShowOptions(true)
       return
     }
-  
-    // Caso contrário → chama GPT
-    const botResult = await callGptApi(text)
+
+    // Caso contrário → chama GPT com histórico
+    const botResult = await callGptApi(text, [...messages, userMessage])
     const botMessage: Message = {
       id: (Date.now() + 2).toString(),
-      text: botResult.text, // agora o GPT decide se pergunta sobre abrir chamado
+      text: botResult.text,
       sender: "bot",
       timestamp: new Date(),
       isGpt: botResult.isGpt,
     }
-  
+
     setMessages((prev) => [...prev, botMessage])
     setIsTyping(false)
     setShowOptions(true)
   }
-  
+
   return (
     <div className="min-h-screen chat-gradient">
       {/* Header */}
@@ -160,7 +199,11 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Olá, {userName}</span>
-            <Button variant="outline" size="sm" onClick={onLogout}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </Button>
@@ -187,7 +230,7 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
               <Card
                 className={`max-w-[70%] p-3 ${message.sender === "user" ? "bg-primary text-primary-foreground" : "bg-card"}`}
               >
-                <p className="text-sm leading-relaxed">{message.text}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
                 <p
                   className={`text-xs mt-2 ${
                     message.sender === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -230,7 +273,7 @@ Por favor, me diga o motivo do seu atendimento para que eu possa ajudar.`,
           {/* Botões extras */}
           {showOptions && (
             <div className="flex justify-center gap-3 mt-4">
-              <Button variant="outline" onClick={onLogout}>
+              <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>

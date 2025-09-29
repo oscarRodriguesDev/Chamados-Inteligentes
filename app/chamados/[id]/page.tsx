@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Upload, X } from "lucide-react"
+import { Upload, Camera, X } from "lucide-react"
 
 export default function ChamadosPage() {
   const [files, setFiles] = useState<File[]>([])
@@ -85,13 +85,27 @@ export default function ChamadosPage() {
           <div>
             <Label>Fotos (opcional)</Label>
             <div className="flex flex-col gap-3">
+              {/* Upload de galeria */}
               <label className="flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                 <Upload className="w-5 h-5 mr-2 text-gray-500" />
-                <span className="text-sm text-gray-600">Adicionar fotos</span>
+                <span className="text-sm text-gray-600">Selecionar da galeria</span>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+
+              {/* Tirar foto com câmera */}
+              <label className="flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <Camera className="w-5 h-5 mr-2 text-gray-500" />
+                <span className="text-sm text-gray-600">Tirar foto agora</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   className="hidden"
                   onChange={handleFileChange}
                 />
