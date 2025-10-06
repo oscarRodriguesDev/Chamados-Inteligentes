@@ -22,6 +22,7 @@ export default function ChatInterface() {
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const id = parms.id
+  const [protocolo, setProtocolo] = useState<string>("")
 
   const initialMessage: Message[] = [
     {
@@ -111,6 +112,7 @@ export default function ChatInterface() {
 
     // Detecta protocolo TK-...
     const protocoloRegex = /tk-\d{2}\d{2}\d{4}\d{2}\d{2}\d{2}\d{3}/i
+    setProtocolo(protocoloRegex.exec(botResult.text)?.[0] || "")
     setShowChamadoButton(protocoloRegex.test(botResult.text))
 
     setIsTyping(false)
@@ -167,7 +169,7 @@ export default function ChatInterface() {
         {showOptions && (
           <div className="flex justify-center gap-3 mt-4">
             <Button variant="outline" onClick={handleLogout}><LogOut className="w-4 h-4 mr-2"/>Sair</Button>
-            {showChamadoButton && <Button variant="default" onClick={() => router.push("/chamados/01")}>Abrir Chamado</Button>}
+            {showChamadoButton && <Button variant="default" onClick={() => router.push(`/chamados/${protocolo}`)}>Abrir Chamado</Button>}
           </div>
         )}
         <div ref={messagesEndRef} />
