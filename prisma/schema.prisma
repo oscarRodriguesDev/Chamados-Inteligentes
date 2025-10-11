@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum RULES {
+  SYSTEM_ADMIN
+  ADMIN_ORG
+  DIRETOR
+  GESTOR
+  ANALISTA
+  OPERADOR
+}
+
+enum setor {
+  RH
+  DP
+  TI
+  SESMT
+  FINANCEIRO
+  COMERCIAL
+  OPERACAO
+  LOGISTICA
+}
+
+enum Status {
+  ABERTO
+  EM_ANDAMENTO
+  FINALIZADO
+  CANCELADO
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+}
+
+model Empresa {
+  id       Int       @id @default(autoincrement())
+  razao    String
+  cnpj     String    @unique
+  botNumer String    // número do bot da empresa
+  usuarios User[]
+  chamados Chamado[]
+  avisos   Aviso[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  empresaID Int
+  empresa   Empresa  @relation(fields: [empresaID], references: [id])
+  name      String
+  email     String   @unique
+  cpf       String   @unique
+  telefone  String   // número de telefone para contato com o bot
+  password  String
+  token     String
+  rules     RULES    @default(OPERADOR)
+  setor     setor    @default(OPERACAO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chamados Chamado[]
+  avisos   Aviso[]
+}
+
+model Chamado {
+  id           Int        @id @default(autoincrement())
+  empresaID    Int
+  empresa      Empresa    @relation(fields: [empresaID], references: [id])
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id])
+  
+  titulo       String
+  setor        setor
+  descricao    String
+  fotos        String?    // se quiser armazenar várias fotos, pode usar String[]
+  status       Status     @default(ABERTO)
+  prioridade   Prioridade @default(BAIXA)
+  criadoEm     DateTime   @default(now())
+  atualizadoEm DateTime   @updatedAt
+}
+
+model Aviso {
+  id           Int      @id @default(autoincrement())
+  empresaID    Int
+  empresa      Empresa  @relation(fields: [empresaID], references: [id])
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  
+  titulo       String
+  conteudo     String
+  setor        setor
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
