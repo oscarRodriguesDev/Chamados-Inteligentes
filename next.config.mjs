@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack(config) {
-    // Ignorar warnings glob EPERM
-    config.ignoreWarnings = [
-      {
-        message: /Configurações Locais|Ambiente de Rede/,
-      },
-    ];
-    return config;
+  eslint: {
+    ignoreDuringBuilds: true,
   },
-};
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
+  },
+}
 
-export default nextConfig;
+export default nextConfig

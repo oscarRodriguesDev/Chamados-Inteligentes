@@ -12,8 +12,8 @@ import { MessageCircle, User, Lock } from "lucide-react"
 
 
 export default function LoginForm() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
+  const [username, setUsername] = useState("oscar@nolevel.com.br")
+  const [password, setPassword] = useState("123456")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
