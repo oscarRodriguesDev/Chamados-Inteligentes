@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/src/components/ui/avatar"
 import { Send, LogOut, Bot, User } from "lucide-react"
 import { quadro_avisos } from "@/src/app/utils/avisos"
 import { signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 
 interface Message {
   id: string
@@ -22,13 +23,16 @@ export default function ChatInterface() {
   const parms = useParams()
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const id = parms.id
+  const userID = parms.userID
   const [protocolo, setProtocolo] = useState<string>("")
+
+  const session = useSession()
+  const usernam = session.data?.user.name || "Usuário"
 
   const initialMessage: Message[] = [
     {
-      id: "1",
-      text: `Olá ${id}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. Por favor, me diga o motivo do seu atendimento.`,
+      id: String(userID),
+      text: `Olá ${usernam}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. Por favor, me diga o motivo do seu atendimento.`,
       sender: "bot",
       timestamp: new Date(),
       isGpt: false,
@@ -126,12 +130,12 @@ export default function ChatInterface() {
           <div className="flex items-center gap-3">
             <Avatar><AvatarFallback className="bg-primary text-primary-foreground"><Bot className="w-5 h-5" /></AvatarFallback></Avatar>
             <div>
-              <h1 className="font-semibold">Assistente Virtual</h1>
+              <h1 className="font-semibold">Hevelyn</h1>
               <p className="text-sm text-muted-foreground">Online</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">Olá, {id}</span>
+            <span className="text-sm text-muted-foreground">Olá, {usernam}</span>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2"/>Sair
             </Button>

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import NextAuth from "next-auth";
+
+import NextAuth, { DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -16,6 +17,24 @@ type User  = {
   chamados: any[];
   avisos: any[];
 } ;
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      rules: string;
+      setor: string;
+      empresaID: number;
+      empresa: any;
+      chamados: any[];
+      avisos: any[];
+    } & DefaultSession["user"];
+  }
+
+
+}
+
+
 
 async function getUserWithRelations(email: string) {
   return prisma.user.findUnique({

@@ -48,14 +48,14 @@ model Empresa {
   razao    String
   cnpj     String    @unique
   botNumer String    // número do bot da empresa
-  usuarios User[]
-  chamados Chamado[]
-  avisos   Aviso[]
+  usuarios User[] //usuarios associados as emrpesas
+  chamados Chamado[] //llista de chamados da empresa
+  avisos   Aviso[] //lista de avisos associados a ela
 }
 
 model User {
   id        Int      @id @default(autoincrement())
-  empresaID Int
+  empresaID Int  //usuario precisa estar associado a uma emrpesa
   empresa   Empresa  @relation(fields: [empresaID], references: [id])
   name      String
   email     String   @unique
@@ -64,23 +64,22 @@ model User {
   password  String
   token     String
   rules     RULES    @default(OPERADOR)
-  setor     setor    @default(OPERACAO)
+  setor     setor    @default(OPERACAO) //usuario pertence a um setor
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  chamados Chamado[]
-  avisos   Aviso[]
+  chamados Chamado[] //possui ou não uma lista de chamados
+  avisos   Aviso[] //pode ou não criar avisos
 }
 
 model Chamado {
   id           Int        @id @default(autoincrement())
   empresaID    Int
-  empresa      Empresa    @relation(fields: [empresaID], references: [id])
+  empresa      Empresa    @relation(fields: [empresaID], references: [id]) //recebe o id da empresa
   userId       Int
-  user         User       @relation(fields: [userId], references: [id])
-  
+  user         User       @relation(fields: [userId], references: [id]) // pertence a um usuario
   titulo       String
-  setor        setor
+  setor        setor      
   descricao    String
   fotos        String?    // se quiser armazenar várias fotos, pode usar String[]
   status       Status     @default(ABERTO)
@@ -95,7 +94,6 @@ model Aviso {
   empresa      Empresa  @relation(fields: [empresaID], references: [id])
   userId       Int
   user         User     @relation(fields: [userId], references: [id])
-  
   titulo       String
   conteudo     String
   setor        setor
