@@ -8,7 +8,7 @@ import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import { MessageCircle, User, Lock } from "lucide-react"
-import { useSession } from "next-auth/react"
+
 
 
 
@@ -19,8 +19,7 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const session = useSession()
-  const id =session.data?.user.id
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +40,7 @@ export default function LoginForm() {
       // Erro frequente: res.ok NÃO RETORNA TRUE em erro, mas res.error pode vir como string/JSON
       if (res && res.ok) {
         // Login OK
-        router.push(`chat/${id}`) // Redireciona para a página do chat com o ID do usuário;
+        router.push(`chat`) // Redireciona para a página do chat com o ID do usuário;
       } else if (res && res.error) {
         let msg = res.error
         try {

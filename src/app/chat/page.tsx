@@ -23,7 +23,7 @@ export default function ChatInterface() {
   const parms = useParams()
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const userID = parms.userID
+  //const userID = String(parms.userID) || parms.userID
   const [protocolo, setProtocolo] = useState<string>("")
 
   const session = useSession()
@@ -31,7 +31,7 @@ export default function ChatInterface() {
 
   const initialMessage: Message[] = [
     {
-      id: String(userID),
+      id: session.data?.user?.id || "0",
       text: `Olá ${usernam}! Bem-vindo ao nosso sistema de chamados. Sou seu assistente virtual. Por favor, me diga o motivo do seu atendimento.`,
       sender: "bot",
       timestamp: new Date(),
